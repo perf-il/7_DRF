@@ -21,24 +21,24 @@ class LessonsTest(APITestCase):
         token = AccessToken.for_user(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
-    # def test_create_course(self):
-    #     """Тестирование создания нового курса"""
-    #     data = {
-    #         'title': 'Test Course',
-    #         'description': 'Test description',
-    #         'owner': self.user.pk,
-    #     }
-    #
-    #     response = self.client.post(
-    #         '/courses/',
-    #         data=data
-    #     )
-    #     print('-->!', response)
-    #
-    #     self.assertEqual(
-    #         response.status_code,
-    #         status.HTTP_201_CREATED
-    #     )
+    def test_create_course(self):
+        """Тестирование создания нового курса"""
+        data = {
+            'title': 'Test Course',
+            'description': 'Test description',
+            'owner': self.user.pk,
+        }
+
+        response = self.client.post(
+            reverse('lessons:courses'),
+            data=data
+        )
+        print('-->!', response)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
 
     def test_create_lesson(self):
         """Тестирование создания нового урока"""
