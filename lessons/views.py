@@ -1,4 +1,5 @@
 from django.core import exceptions
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -119,8 +120,10 @@ class SubscriptionCreateAPIView(generics.CreateAPIView):
         course_id = int(request.get_full_path().split('/')[3])
         try:
             serializer.save(user=request.user, course=Course.objects.get(id=course_id))
+        except ObjectDoesNotExist:
+            raise ObjectDoesNotExist(f'Курс с id = {course_id} не существует')
         except:
-            raise exceptions.ObjectDoesNotExist(f'Курс с id = {course_id} не существует')
+            raise Exception('Вы уже подписаны на этот курс')
         return Response(status=status.HTTP_201_CREATED)
 
 
