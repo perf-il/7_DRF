@@ -64,6 +64,7 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'подписка'
         verbose_name_plural = 'подписки'
+        unique_together = ['user', 'course']
 
     def __str__(self):
         return f'{self.user} подписан на курс {self.course}' if self.is_active else f'{self.user} отписался от курса {self.course}'
