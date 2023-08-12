@@ -30,15 +30,116 @@ class LessonsTest(APITestCase):
         }
 
         response = self.client.post(
-            reverse('lessons:courses'),
+            reverse('lessons:courses-list'),
             data=data
         )
-        print('-->!', response)
 
         self.assertEqual(
             response.status_code,
             status.HTTP_201_CREATED
         )
+
+        self.assertTrue(Course.objects.all().exists())
+
+        self.assertEqual(
+                response.json(),
+                {
+                    'id': 1,
+                    'lessons': [],
+                    'number_of_lessons': 0,
+                    'subscription': False,
+                    'title': 'Test Course',
+                    'preview': None,
+                    'description': 'Test description',
+                    'owner': self.user.pk
+                }
+            )
+
+    def test_list_courses(self):
+        """Тестирование списка курсов"""
+
+        self.course = Course.objects.create(
+            title='Test Course',
+            description='Test description',
+        )
+
+        response = self.client.get(
+            reverse('lessons:courses-list')
+
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            response.json()['results'],
+            [
+                {'id': self.course.id,
+                 'lessons': list(),
+                 'number_of_lessons': 0,
+                 'subscription': False,
+                 'title': self.course.title,
+                 'preview': None,
+                 'description': self.course.description,
+                 'owner': None}
+            ]
+        )
+
+    def test_update_course(self):
+        """Тестирование редактирования курса"""
+
+        self.course = Course.objects.create(
+            title='Test Course',
+            description='Test description',
+        )
+
+        data = {
+            'title': 'Test update course',
+            'description': 'Test update  course description',
+        }
+
+        response = self.client.put(
+            reverse('lessons:courses-detail', kwargs={"pk": self.course.pk}),
+            data=data
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(
+            response.json()['title'],
+            'Test update course'
+        )
+
+        self.assertEqual(
+            response.json()['description'],
+            'Test update  course description'
+        )
+
+    def test_delete_course(self):
+        """Тестирование удаления курса"""
+
+        self.course = Course.objects.create(
+            title='Test Course',
+            description='Test description',
+        )
+
+        self.assertTrue(
+            Course.objects.all().exists()
+        )
+
+        self.client.delete(
+            reverse('lessons:courses-detail', kwargs={"pk": self.course.pk}),
+        )
+
+        self.assertFalse(
+            Course.objects.all().exists()
+        )
+
 
     def test_create_lesson(self):
         """Тестирование создания нового урока"""
@@ -67,9 +168,7 @@ class LessonsTest(APITestCase):
             status.HTTP_201_CREATED
         )
 
-        self.assertTrue(
-            Lesson.objects.all().exists()
-        )
+        self.assertTrue(Lesson.objects.all().exists())
 
         self.assertEqual(
             response.json(),
@@ -233,4 +332,3 @@ class LessonsTest(APITestCase):
             self.unsubscription.__str__(),
             f'{self.user.email} отписался от курса {self.course.title}'
         )
-
