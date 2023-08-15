@@ -12,6 +12,7 @@ from lessons.models import Course, Lesson, Payment, Subscription
 from lessons.pagination import MyPagination
 from lessons.permissions import IsModerator, IsOwner, IsNotModerator, IsOwnerOrModerator
 from lessons.serializers import CourseSerializer, LessonSerializer, PaymentSerializer, SubscriptionSerializer
+from lessons.services import create_session, create_payment
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -117,14 +118,30 @@ class SubscriptionCreateAPIView(generics.CreateAPIView):
     def post(self, request, **kwargs):
         serializer = SubscriptionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        #  получение модели курса по url
         course_id = int(request.get_full_path().split('/')[3])
-        try:
-            serializer.save(user=request.user, course=Course.objects.get(id=course_id))
-        except ObjectDoesNotExist:
-            raise ObjectDoesNotExist(f'Курс с id = {course_id} не существует')
-        except:
+        course = Course.objects.get(id=course_id)
+        #  проверка существования ранее созданной подписки в активном статусе
+        #  при выполнении условия выполняется исключение
+        if Subscription.objects.filter(user=request.user, course=course, is_active=True).exists():
             raise Exception('Вы уже подписаны на этот курс')
-        return Response(status=status.HTTP_201_CREATED)
+        #  создание новой платежной сессии и модели платежа
+        payment_data = create_session(course)
+        create_payment(request, payment_data, course)
+        #  проверка существования ранее созданной подписки в неактивном статусе
+        #  при выполнении условия статус меняется на активный
+        if Subscription.objects.filter(user=request.user, course=course, is_active=False).exists():
+            sub = Subscription.objects.filter(user=request.user, course=course, is_active=False)[0]
+            sub.is_active = True
+            sub.save()
+        else:
+            try:
+                serializer.save(user=request.user, course=course)
+            except ObjectDoesNotExist:
+                raise ObjectDoesNotExist(f'Курс с id = {course_id} не существует')
+            except:
+                raise Exception('Создание подписки невозможно')
+        return Response(data={'id': payment_data.get('id'), 'url': payment_data.get('url')}, status=status.HTTP_201_CREATED)
 
 
 class SubscriptionDestroyAPIView(generics.DestroyAPIView):
@@ -134,6 +151,7 @@ class SubscriptionDestroyAPIView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         if instance.user == self.request.user or self.request.user.is_superuser:
             instance.is_active = False
+            instance.is_paid = False
             instance.save()
         else:
             raise Exception('Вы не можете удалить эту подписку')

@@ -15,12 +15,12 @@ class LessonAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'payment_data', 'paid_course', 'paid_lesson', 'summ', 'payment_method')
+    list_display = ('user', 'payment_data', 'paid_course', 'paid_lesson', 'summ', 'payment_method', 'status',)
 
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'course', 'is_active',)
+    list_display = ('id', 'user', 'course', 'is_active', 'is_paid',)
 
 
 
