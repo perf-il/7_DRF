@@ -9,6 +9,7 @@ class Course(models.Model):
     preview = models.ImageField(upload_to='courses/preview', verbose_name='превью', **NULLABLE)
     description = models.TextField(verbose_name='описание', **NULLABLE)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='автор', related_name='course_author', **NULLABLE)
+    price = models.PositiveIntegerField(default=1000, verbose_name='цена')
 
     class Meta:
         verbose_name = 'курс'
@@ -40,12 +41,14 @@ class Payment(models.Model):
         CASHLESS = 'CL', 'Cashless'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='пользователь')
-    payment_data = models.DateField(verbose_name='дата оплаты', auto_now_add=True)
+    payment_data = models.DateField(auto_now_add=True,verbose_name='дата оплаты')
     paid_course = models.ForeignKey(Course, on_delete=models.SET_NULL, verbose_name='оплаченный курс', **NULLABLE)
     paid_lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, verbose_name='оплаченный урок', **NULLABLE)
     summ = models.PositiveIntegerField(verbose_name='сумма оплаты')
     payment_method = models.CharField(max_length=2, choices=MethodPayment.choices, default=MethodPayment.CASH[0],
                                       verbose_name='способ оплаты')
+    stripe_id = models.CharField(max_length=330, verbose_name='id номер в системе Stripe')
+    status = models.CharField(max_length=30, verbose_name='статус')
 
     class Meta:
         verbose_name = 'платеж'
@@ -60,6 +63,7 @@ class Subscription(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name='курс')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='пользователь')
     is_active = models.BooleanField(default=True, verbose_name='подписан')
+    is_paid = models.BooleanField(default=False, verbose_name='оплачено')
 
     class Meta:
         verbose_name = 'подписка'
