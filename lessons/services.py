@@ -79,5 +79,3 @@ def create_payment(instance, payment_data, course):
         status=get_payment_status(payment_data.get('id'))
     )
 
-
-
